@@ -7,8 +7,8 @@
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
 
-        <PackageId>GreenNide.ExpressionFilter</PackageId>
-        <Version>0.0.1-alpha.2</Version>
+        <PackageId>GreenNide.FilterGenerator</PackageId>
+        <Version>0.0.1-alpha.5</Version>
         <Authors>GreenNide</Authors>
         <Copyright>Copyright (c) GreenNide 2026</Copyright>
         <Description>Source generator for filtering and querying collections using expression trees. Generates POCO filter classes with Apply() extension method for IQueryable.</Description>
@@ -21,10 +21,10 @@
         <RepositoryType>git</RepositoryType>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
-        <DevelopmentDependency>true</DevelopmentDependency>
         <NoPackageAnalysis>true</NoPackageAnalysis>
     </PropertyGroup>
 
@@ -33,23 +33,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\GreenNide.FilterGenerator.Abstractions\GreenNide.FilterGenerator.Abstractions.csproj"/>
+        <PackageReference Include="Microsoft.CodeAnalysis" Version="5.6.0" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.*" PrivateAssets="All"/>
     </ItemGroup>
 
     <ItemGroup>
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false"/>
         <None Include="..\README.md" Pack="true" PackagePath="/" Visible="false"/>
-    </ItemGroup>
-
-    <!-- Pack the Abstractions assembly into the lib folder -->
-    <ItemGroup>
-        <None Include="..\GreenNide.FilterGenerator.Abstractions\bin\$(Configuration)\netstandard2.0\GreenNide.FilterGenerator.Abstractions.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis" Version="5.6.0" PrivateAssets="all"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" PrivateAssets="all"/>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.*" PrivateAssets="All"/>
     </ItemGroup>
 
 </Project>

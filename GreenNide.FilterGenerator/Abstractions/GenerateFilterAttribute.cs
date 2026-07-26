@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 
 namespace GreenNide.ExpressionFilter;
 
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public class GenerateFilterAttribute(Type entityType) : Attribute
 {
-     Type EntityType = entityType;
+    Type EntityType = entityType;
 
     /// <summary>
-    ///     Имя сгенерированного класса фильтра.
+    ///     Имя генерируемого класса фильтра.
     ///     Если не задано, имя вычисляется автоматически по конвенции:
     ///     - {EntityName}FilterParams (Order → OrderFilterParams)
     /// </summary>

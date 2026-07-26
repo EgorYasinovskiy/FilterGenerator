@@ -28,23 +28,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Атрибуты и enum — обычная ссылка (нужны в рантайме тестов) -->
-        <ProjectReference Include="..\GreenNide.FilterGenerator.Abstractions\GreenNide.FilterGenerator.Abstractions.csproj"/>
-        <!-- Source generator: обычная ссылка (нужна SourceGenerator-тестам для доступа к internal типам)
-             + analyzer (чтобы генератор реально выполнялся на этапе компиляции) -->
+        <!-- Source generator: обычная ссылка + analyzer -->
         <ProjectReference Include="..\GreenNide.FilterGenerator\GreenNide.FilterGenerator.csproj"/>
         <ProjectReference Include="..\GreenNide.FilterGenerator\GreenNide.FilterGenerator.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false"/>
     </ItemGroup>
-
-    <!-- Генератор при запуске как analyzer не может найти свою зависимость (Abstractions).
-         Явно подключаем DLL Abstractions как analyzer-зависимость, чтобы компилятор
-         подложил её рядом с генератором при загрузке. -->
-    <Target Name="AddAbstractionsToAnalyzer" BeforeTargets="CoreCompile">
-        <ItemGroup>
-            <Analyzer Include="..\GreenNide.FilterGenerator.Abstractions\bin\$(Configuration)\netstandard2.0\GreenNide.FilterGenerator.Abstractions.dll"/>
-        </ItemGroup>
-    </Target>
 
 </Project>

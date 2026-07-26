@@ -1,5 +1,8 @@
 # GreenNide.ExpressionFilter
 
+[![NuGet Version](https://img.shields.io/nuget/v/GreenNide.FilterGenerator?label=nuget&color=blue)](https://www.nuget.org/packages/GreenNide.FilterGenerator/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/GreenNide.FilterGenerator?color=green)](https://www.nuget.org/packages/GreenNide.FilterGenerator/)
+
 Roslyn source generator, который автоматически генерирует фильтры для запросов EF Core.
 
 Вы описываете фильтр через Expression-свойства — генератор создаёт **отдельный POCO-класс** со свойствами и методом
@@ -10,22 +13,18 @@ Roslyn source generator, который автоматически генери�
 ### NuGet (рекомендуется)
 
 ```bash
-dotnet add package GreenNide.ExpressionFilter --prerelease
+dotnet add package GreenNide.FilterGenerator --prerelease
 ```
 
 Или в `.csproj`:
 
 ```xml
-<PackageReference Include="GreenNide.ExpressionFilter" Version="0.0.1-alpha.1" />
+<PackageReference Include="GreenNide.FilterGenerator" Version="0.0.1-alpha.5" />
 ```
-
-Пакет уже включает source generator (analyzer) и абстракции — дополнительные ссылки не нужны.
 
 ### Из исходников (для разработки)
 
 ```xml
-<ProjectReference Include="..\GreenNide.FilterGenerator.Abstractions\GreenNide.FilterGenerator.Abstractions.csproj" />
-
 <ProjectReference Include="..\GreenNide.FilterGenerator\GreenNide.FilterGenerator.csproj"
                   OutputItemType="Analyzer"
                   ReferenceOutputAssembly="false" />
