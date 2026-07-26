@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <RootNamespace>GreenNide.ExpressionFilter.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+        <PackageReference Include="xunit" Version="2.*" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.*">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector" Version="6.*">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
+        <PackageReference Include="Testcontainers.PostgreSql" Version="4.*" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.*" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Атрибуты и enum — обычная ссылка (нужны в рантайме тестов) -->
+        <ProjectReference Include="..\GreenNide.FilterGenerator.Abstractions\GreenNide.FilterGenerator.Abstractions.csproj" />
+        <!-- Source generator: обычная ссылка (нужна SourceGenerator-тестам для доступа к internal типам)
+             + analyzer (чтобы генератор реально выполнялся на этапе компиляции) -->
+        <ProjectReference Include="..\GreenNide.FilterGenerator\GreenNide.FilterGenerator.csproj" />
+        <ProjectReference Include="..\GreenNide.FilterGenerator\GreenNide.FilterGenerator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <!-- Генератор при запуске как analyzer не может найти свою зависимость (Abstractions).
+         Явно подключаем DLL Abstractions как analyzer-зависимость, чтобы компилятор
+         подложил её рядом с генератором при загрузке. -->
+    <Target Name="AddAbstractionsToAnalyzer" BeforeTargets="CoreCompile">
+        <ItemGroup>
+            <Analyzer Include="..\GreenNide.FilterGenerator.Abstractions\bin\$(Configuration)\netstandard2.0\GreenNide.FilterGenerator.Abstractions.dll" />
+        </ItemGroup>
+    </Target>
+
+</Project>
