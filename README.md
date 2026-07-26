@@ -6,19 +6,25 @@ Roslyn source generator, который автоматически генери�
 
 ## Установка
 
-Добавьте в решение два проекта:
+### NuGet (рекомендуется)
 
-| Проект | Назначение |
-|--------|-----------|
-| `GreenNide.FilterGenerator.Abstractions` | Атрибуты `[GenerateFilter]`, `[Compare]`, enum `CompareOperator` |
-| `GreenNide.FilterGenerator` | Сам source generator (подключается как analyzer) |
+```bash
+dotnet add package GreenNide.ExpressionFilter --prerelease
+```
 
-В `.csproj` потребителя:
+Или в `.csproj`:
+
+```xml
+<PackageReference Include="GreenNide.ExpressionFilter" Version="0.0.1-alpha.1" />
+```
+
+Пакет уже включает source generator (analyzer) и абстракции — дополнительные ссылки не нужны.
+
+### Из исходников (для разработки)
 
 ```xml
 <ProjectReference Include="..\GreenNide.FilterGenerator.Abstractions\GreenNide.FilterGenerator.Abstractions.csproj" />
 
-<!-- Generator как analyzer -->
 <ProjectReference Include="..\GreenNide.FilterGenerator\GreenNide.FilterGenerator.csproj"
                   OutputItemType="Analyzer"
                   ReferenceOutputAssembly="false" />

@@ -126,8 +126,7 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
 
     /// <summary>
     /// Проверяет, что при передаче null-фильтра метод Apply() возвращает
-    /// все заказы без фильтрации. Это базовый guard — метод не должен
-    /// выбрасывать NullReferenceException.
+    /// все заказы без фильтрации. Метод не должен выбрасывать NullReferenceException.
     /// </summary>
     [Fact]
     public async Task NullFilter_ShouldReturnAllOrders()

@@ -3,17 +3,24 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
 
         <PackageId>GreenNide.ExpressionFilter</PackageId>
-        <Version>0.0.1</Version>
+        <Version>0.0.1-alpha.1</Version>
         <Authors>GreenNide</Authors>
-        <Description>Source generator for filtering and querying collections using expression trees.</Description>
-        <PackageTags>source-generator;roslyn;filter;expression-tree;linq</PackageTags>
-        <RepositoryType>git</RepositoryType>
+        <Copyright>Copyright (c) GreenNide 2026</Copyright>
+        <Description>Source generator for filtering and querying collections using expression trees. Generates POCO filter classes with Apply() extension method for IQueryable.</Description>
+        <PackageTags>source-generator roslyn filter expression-tree linq efcore entity-framework</PackageTags>
+        <PackageReleaseNotes>Initial prerelease. Source generator for type-safe collection filtering.</PackageReleaseNotes>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageProjectUrl>https://github.com/EgorYasinovskiy/FilterGenerator</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/EgorYasinovskiy/FilterGenerator</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
@@ -42,6 +49,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis" Version="5.6.0" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.*" PrivateAssets="All" />
     </ItemGroup>
 
 </Project>
