@@ -12,8 +12,8 @@ public sealed partial class FilterGenerator
     // MethodParser.cs (partial class FilterGenerator)
 
     /// <summary>
-    /// Проверяет, что метод имеет сигнатуру:
-    /// Expression<Func<TEntity, bool>>? Method(FilterType filter)
+    ///     Проверяет, что метод имеет сигнатуру:
+    ///     Expression<Func<TEntity, bool>>? Method(FilterType filter)
     /// </summary>
     private static bool IsPredicateMethod(
         IMethodSymbol method, INamedTypeSymbol entityType,
@@ -42,8 +42,8 @@ public sealed partial class FilterGenerator
     }
 
     /// <summary>
-    /// Извлекает замыкания на filter.X из тела метода.
-    /// filter.ItemId.HasValue → свойство "ItemId", тип "int?"
+    ///     Извлекает замыкания на filter.X из тела метода.
+    ///     filter.ItemId.HasValue → свойство "ItemId", тип "int?"
     /// </summary>
     private static MethodDefinition? ParseMethodPredicate(
         IMethodSymbol method, INamedTypeSymbol filterType,

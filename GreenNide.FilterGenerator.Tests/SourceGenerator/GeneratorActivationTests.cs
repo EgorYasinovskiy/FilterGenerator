@@ -4,17 +4,17 @@ using Xunit;
 namespace GreenNide.ExpressionFilter.Tests.SourceGenerator;
 
 /// <summary>
-/// Тесты активации генератора фильтров.
-/// Проверяют базовые сценарии: генерация при наличии атрибута,
-/// отсутствие ошибок для валидного кода, и отсутствие генерации без атрибута.
+///     Тесты активации генератора фильтров.
+///     Проверяют базовые сценарии: генерация при наличии атрибута,
+///     отсутствие ошибок для валидного кода, и отсутствие генерации без атрибута.
 /// </summary>
 public class GeneratorActivationTests
 {
     /// <summary>
-    /// Проверяет, что генератор создаёт выходной файл, когда класс фильтра
-    /// помечен атрибутом [GenerateFilter] и содержит корректное Expression-свойство.
-    /// Исходный класс: OrderFilterDefinition → генерируется: OrderFilterParams.
-    /// Это базовый smoke-тест — если он не проходит, генератор не работает в принципе.
+    ///     Проверяет, что генератор создаёт выходной файл, когда класс фильтра
+    ///     помечен атрибутом [GenerateFilter] и содержит корректное Expression-свойство.
+    ///     Исходный класс: OrderFilterDefinition → генерируется: OrderFilterParams.
+    ///     Это базовый smoke-тест — если он не проходит, генератор не работает в принципе.
     /// </summary>
     [Fact]
     public void Generator_ShouldProduceOutput_WhenFilterClassHasGenerateFilterAttribute()
@@ -47,10 +47,10 @@ public partial class OrderFilterDefinition
     }
 
     /// <summary>
-    /// Проверяет, что для корректно определённого фильтра генератор не выдаёт
-    /// ни одной ошибки (DiagnosticSeverity.Error).
-    /// Это важно: генератор может создать файл, но при этом сообщить об ошибках
-    /// в других частях кода. Этот тест гарантирует чистоту диагностики.
+    ///     Проверяет, что для корректно определённого фильтра генератор не выдаёт
+    ///     ни одной ошибки (DiagnosticSeverity.Error).
+    ///     Это важно: генератор может создать файл, но при этом сообщить об ошибках
+    ///     в других частях кода. Этот тест гарантирует чистоту диагностики.
     /// </summary>
     [Fact]
     public void Generator_ShouldNotProduceDiagnostics_ForValidFilterClass()
@@ -82,9 +82,9 @@ public partial class OrderFilterDefinition
     }
 
     /// <summary>
-    /// Проверяет, что генератор НЕ активируется, если на классе фильтра
-    /// отсутствует атрибут [GenerateFilter], даже если класс — partial.
-    /// Генератор должен полностью игнорировать классы без атрибута.
+    ///     Проверяет, что генератор НЕ активируется, если на классе фильтра
+    ///     отсутствует атрибут [GenerateFilter], даже если класс — partial.
+    ///     Генератор должен полностью игнорировать классы без атрибута.
     /// </summary>
     [Fact]
     public void Generator_ShouldNotActivate_WhenAttributeNotFound()
@@ -111,8 +111,8 @@ public partial class OrderFilterDefinition
     }
 
     /// <summary>
-    /// Атрибут с ClassName: генерирует класс с указанным именем.
-    /// [GenerateFilter(typeof(E), ClassName = "MyFilter")] → MyFilter.Filter.g.cs.
+    ///     Атрибут с ClassName: генерирует класс с указанным именем.
+    ///     [GenerateFilter(typeof(E), ClassName = "MyFilter")] → MyFilter.Filter.g.cs.
     /// </summary>
     [Fact]
     public void Naming_ExplicitClassName_UsesAttributeValue()

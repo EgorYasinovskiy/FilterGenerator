@@ -5,21 +5,22 @@ using Xunit;
 namespace GreenNide.ExpressionFilter.Tests.SourceGenerator;
 
 /// <summary>
-/// Тесты генерации кода: null-guard для навигаций, суффикс .Value для nullable value types,
-/// проверка null для параметра filter, структура сгенерированного кода.
-/// Все тесты вызывают CodeGenerator через рефлексию (internal API) и проверяют
-/// текст сгенерированного кода на наличие/отсутствие нужных строк.
+///     Тесты генерации кода: null-guard для навигаций, суффикс .Value для nullable value types,
+///     проверка null для параметра filter, структура сгенерированного кода.
+///     Все тесты вызывают CodeGenerator через рефлексию (internal API) и проверяют
+///     текст сгенерированного кода на наличие/отсутствие нужных строк.
 /// </summary>
 public class CodeGeneratorTests
 {
-    private static readonly Type GeneratorType = typeof(GreenNide.FilterGenerator.Generator.FilterGenerator);
+    private static readonly Type GeneratorType = typeof(FilterGenerator.Generator.FilterGenerator);
+
     private static readonly MethodInfo GenerateCodeMethod =
         GeneratorType.GetMethod("GenerateCode", BindingFlags.NonPublic | BindingFlags.Static)!;
 
     /// <summary>
-    /// Обёртка над приватным методом CodeGenerator.GenerateCode().
-    /// Автоматически вычисляет GeneratedClassName из EntityName по конвенции:
-    ///   - Если не задан явно → {EntityName}FilterParams
+    ///     Обёртка над приватным методом CodeGenerator.GenerateCode().
+    ///     Автоматически вычисляет GeneratedClassName из EntityName по конвенции:
+    ///     - Если не задан явно → {EntityName}FilterParams
     /// </summary>
     private static string GenerateCode(FilterClassDefinition def)
     {
@@ -29,9 +30,9 @@ public class CodeGeneratorTests
     }
 
     /// <summary>
-    /// Обёртка над приватным методом BuildNullGuard().
-    /// Принимает строковый путь (например, "Customer.Name") и возвращает
-    /// строку null-guard (например, "e.Customer != null") или null для одноуровневых путей.
+    ///     Обёртка над приватным методом BuildNullGuard().
+    ///     Принимает строковый путь (например, "Customer.Name") и возвращает
+    ///     строку null-guard (например, "e.Customer != null") или null для одноуровневых путей.
     /// </summary>
     private static string? BuildNullGuardViaReflection(string path)
     {
@@ -43,10 +44,10 @@ public class CodeGeneratorTests
     // ─── Null-guard для многоуровневых навигаций ──────────
 
     /// <summary>
-    /// Проверяет генерацию null-guard для 4-уровневой навигации: Order.Customer.Address.City.
-    /// Для каждого промежуточного звена (кроме последнего) должна быть сгенерирована
-    /// проверка на null: e.Order != null, e.Order.Customer != null, e.Order.Customer.Address != null.
-    /// Это предотвращает NullReferenceException при обращении через цепочку навигаций.
+    ///     Проверяет генерацию null-guard для 4-уровневой навигации: Order.Customer.Address.City.
+    ///     Для каждого промежуточного звена (кроме последнего) должна быть сгенерирована
+    ///     проверка на null: e.Order != null, e.Order.Customer != null, e.Order.Customer.Address != null.
+    ///     Это предотвращает NullReferenceException при обращении через цепочку навигаций.
     /// </summary>
     [Fact]
     public void MultiLevelNavigation_ShouldCheckAllIntermediatePaths()
@@ -83,9 +84,9 @@ public class CodeGeneratorTests
     }
 
     /// <summary>
-    /// Проверяет генерацию null-guard для 2-уровневой навигации: Customer.Name.
-    /// Должна быть сгенерирована проверка e.Customer != null.
-    /// Само поле Name не требует null-guard, так как оно — конечное звено.
+    ///     Проверяет генерацию null-guard для 2-уровневой навигации: Customer.Name.
+    ///     Должна быть сгенерирована проверка e.Customer != null.
+    ///     Само поле Name не требует null-guard, так как оно — конечное звено.
     /// </summary>
     [Fact]
     public void TwoLevelNavigation_ShouldCheckIntermediatePath()
@@ -118,8 +119,8 @@ public class CodeGeneratorTests
     }
 
     /// <summary>
-    /// Проверяет, что для одноуровневого пути (Amount) null-guard НЕ генерируется.
-    /// Свойство Amount напрямую принадлежит сущности Order, навигация отсутствует.
+    ///     Проверяет, что для одноуровневого пути (Amount) null-guard НЕ генерируется.
+    ///     Свойство Amount напрямую принадлежит сущности Order, навигация отсутствует.
     /// </summary>
     [Fact]
     public void SingleLevelPath_ShouldHaveNoNullGuard()
@@ -134,9 +135,9 @@ public class CodeGeneratorTests
     // ─── Суффикс .Value для nullable value types ──────────
 
     /// <summary>
-    /// Проверяет, что для ссылочных типов (Customer?) суффикс .Value НЕ добавляется.
-    /// Ссылочные типы не имеют .Value — для них используется только проверка != null.
-    /// В сгенерированном коде должно быть filter.Customer, но не filter.Customer.Value.
+    ///     Проверяет, что для ссылочных типов (Customer?) суффикс .Value НЕ добавляется.
+    ///     Ссылочные типы не имеют .Value — для них используется только проверка != null.
+    ///     В сгенерированном коде должно быть filter.Customer, но не filter.Customer.Value.
     /// </summary>
     [Fact]
     public void ReferenceType_ShouldNotUseValueSuffix()
@@ -170,9 +171,9 @@ public class CodeGeneratorTests
     }
 
     /// <summary>
-    /// Проверяет, что для nullable value types (int?) суффикс .Value добавляется.
-    /// Nullable value types (.HasValue / .Value) требуют явного извлечения значения.
-    /// В сгенерированном коде должно быть filter.MinId.Value.
+    ///     Проверяет, что для nullable value types (int?) суффикс .Value добавляется.
+    ///     Nullable value types (.HasValue / .Value) требуют явного извлечения значения.
+    ///     В сгенерированном коде должно быть filter.MinId.Value.
     /// </summary>
     [Fact]
     public void ValueType_ShouldUseValueSuffix()
@@ -205,9 +206,9 @@ public class CodeGeneratorTests
     }
 
     /// <summary>
-    /// Проверяет, что для string? суффикс .Value НЕ добавляется.
-    /// string — ссылочный тип, хотя и NullableAnnotation.Annotated.
-    /// Для строк используется Contains/StartsWith/EndsWith, а не .Value.
+    ///     Проверяет, что для string? суффикс .Value НЕ добавляется.
+    ///     string — ссылочный тип, хотя и NullableAnnotation.Annotated.
+    ///     Для строк используется Contains/StartsWith/EndsWith, а не .Value.
     /// </summary>
     [Fact]
     public void StringType_ShouldNotUseValueSuffix()
@@ -242,9 +243,9 @@ public class CodeGeneratorTests
     // ─── Проверка null для параметра filter ────────────────
 
     /// <summary>
-    /// Проверяет, что в начале метода Apply() генерируется проверка filter is null.
-    /// Если filter == null, метод должен вернуть исходный запрос без фильтрации.
-    /// Это защита от NullReferenceException при вызове Apply(null).
+    ///     Проверяет, что в начале метода Apply() генерируется проверка filter is null.
+    ///     Если filter == null, метод должен вернуть исходный запрос без фильтрации.
+    ///     Это защита от NullReferenceException при вызове Apply(null).
     /// </summary>
     [Fact]
     public void ShouldCheckFilterForNull()
@@ -278,10 +279,10 @@ public class CodeGeneratorTests
     // ─── Структура сгенерированного кода ───────────────────
 
     /// <summary>
-    /// Проверяет, что сгенерированный код содержит метод Apply() с правильной сигнатурой:
-    /// - Расширяемый тип: IQueryable&lt;Order&gt;
-    /// - Параметр: OrderFilter filter
-    /// Даже если фильтр не содержит полей, метод Apply() всё равно должен быть сгенерирован.
+    ///     Проверяет, что сгенерированный код содержит метод Apply() с правильной сигнатурой:
+    ///     - Расширяемый тип: IQueryable&lt;Order&gt;
+    ///     - Параметр: OrderFilter filter
+    ///     Даже если фильтр не содержит полей, метод Apply() всё равно должен быть сгенерирован.
     /// </summary>
     [Fact]
     public void GeneratedCode_ShouldContainApplyMethod()
@@ -304,10 +305,10 @@ public class CodeGeneratorTests
     }
 
     /// <summary>
-    /// Проверяет, что генератор создаёт два типа:
-    /// 1. Class OrderFilter — отдельный класс со свойствами фильтра (НЕ partial).
-    /// 2. Static class OrderFilterExtensions — с методом Apply().
-    /// Также проверяет правильность namespace.
+    ///     Проверяет, что генератор создаёт два типа:
+    ///     1. Class OrderFilter — отдельный класс со свойствами фильтра (НЕ partial).
+    ///     2. Static class OrderFilterExtensions — с методом Apply().
+    ///     Также проверяет правильность namespace.
     /// </summary>
     [Fact]
     public void GeneratedCode_ShouldContainClassAndExtensions()

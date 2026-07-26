@@ -1,5 +1,3 @@
-using System;
-
 namespace GreenNide.ExpressionFilter;
 
 public enum CompareOperator
@@ -12,6 +10,5 @@ public enum CompareOperator
     LessThanOrEqual,
     Contains,
     StartsWith,
-    EndsWith,
-    
+    EndsWith
 }

@@ -2,7 +2,8 @@
 
 Roslyn source generator, который автоматически генерирует фильтры для запросов EF Core.
 
-Вы описываете фильтр через Expression-свойства — генератор создаёт **отдельный POCO-класс** со свойствами и методом `Apply()`, который конструирует `IQueryable<T>.Where(...)` на основе заполненных свойств.
+Вы описываете фильтр через Expression-свойства — генератор создаёт **отдельный POCO-класс** со свойствами и методом
+`Apply()`, который конструирует `IQueryable<T>.Where(...)` на основе заполненных свойств.
 
 ## Установка
 
@@ -88,7 +89,8 @@ public partial class OrderFilterDefinition
 
 ### 3. Используйте
 
-Генератор создаёт **отдельный POCO-класс** `OrderFilterParams` (не наследуется от Definition) и расширение `OrderFilterParamsExtensions`:
+Генератор создаёт **отдельный POCO-класс** `OrderFilterParams` (не наследуется от Definition) и расширение
+`OrderFilterParamsExtensions`:
 
 ```csharp
 var filter = new OrderFilterParams
@@ -104,16 +106,17 @@ var results = await dbContext.Orders
     .ToListAsync();
 ```
 
-Ключевое отличие: `OrderFilterParams` — standalone POCO, его можно свободно маппить в DTO, сериализовать, передавать на фронтенд.
+Ключевое отличие: `OrderFilterParams` — standalone POCO, его можно свободно маппить в DTO, сериализовать, передавать на
+фронтенд.
 
 ## Именование сгенерированного класса
 
 Генератор использует простую конвенцию (2 варианта):
 
-| Исходный код | Сгенерированный класс |
-|-------------|----------------------|
-| `[GenerateFilter(typeof(Order))]` | `OrderFilterParams` |
-| `[GenerateFilter(typeof(Order), ClassName = "MyFilter")]` | `MyFilter` |
+| Исходный код                                              | Сгенерированный класс |
+|-----------------------------------------------------------|-----------------------|
+| `[GenerateFilter(typeof(Order))]`                         | `OrderFilterParams`   |
+| `[GenerateFilter(typeof(Order), ClassName = "MyFilter")]` | `MyFilter`            |
 
 Правило: если `ClassName` не задан, используется `{EntityName}FilterParams`.
 
@@ -137,19 +140,20 @@ public static Expression<Func<Order, decimal?>>? MinAmount { get; } = o => o.Amo
 
 **Поддерживаемые операторы:**
 
-| Оператор | Описание |
-|----------|----------|
-| `Equal` | `==` |
-| `NotEqual` | `!=` |
-| `GreaterThan` | `>` |
-| `GreaterThanOrEqual` | `>=` |
-| `LessThan` | `<` |
-| `LessThanOrEqual` | `<=` |
-| `Contains` | `.Contains()` |
-| `StartsWith` | `.StartsWith()` |
-| `EndsWith` | `.EndsWith()` |
+| Оператор             | Описание        |
+|----------------------|-----------------|
+| `Equal`              | `==`            |
+| `NotEqual`           | `!=`            |
+| `GreaterThan`        | `>`             |
+| `GreaterThanOrEqual` | `>=`            |
+| `LessThan`           | `<`             |
+| `LessThanOrEqual`    | `<=`            |
+| `Contains`           | `.Contains()`   |
+| `StartsWith`         | `.StartsWith()` |
+| `EndsWith`           | `.EndsWith()`   |
 
 **Авто-определение оператора:**
+
 - `string` → `Contains`
 - Все остальные типы → `Equal`
 - Можно переопределить через `[Compare(...)]`
@@ -209,7 +213,8 @@ if (!string.IsNullOrWhiteSpace(filter.Search))
 
 ### Методы-предикаты
 
-Статические методы с сигнатурой `Expression<Func<TEntity, bool>>? Method(DefinitionType filter)` позволяют писать сложные предикаты:
+Статические методы с сигнатурой `Expression<Func<TEntity, bool>>? Method(DefinitionType filter)` позволяют писать
+сложные предикаты:
 
 ```csharp
 [GenerateFilter(typeof(Order))]
@@ -239,8 +244,10 @@ public partial class OrderFilterDefinition
 ```
 
 Генератор автоматически:
+
 - Копирует closure-свойства в сгенерированный POCO-класс
-- В `Apply()` создаёт промежуточный объект Definition, копирует closure-свойства и вызывает методы-предикаты (bridge-паттерн)
+- В `Apply()` создаёт промежуточный объект Definition, копирует closure-свойства и вызывает методы-предикаты (
+  bridge-паттерн)
 
 ```csharp
 var filter = new OrderFilterParams { MinItemCount = 2, MinItemPrice = 100m };
@@ -271,7 +278,8 @@ OrderFilterDefinition                    OrderFilterParams (генерирует
 
 Генератор корректно работает с nullable value types:
 
-- `int?`, `decimal?`, `Guid?`, `DateTime?` и т.д. — используется `.HasValue` для проверки + `.Value` для доступа к значению
+- `int?`, `decimal?`, `Guid?`, `DateTime?` и т.д. — используется `.HasValue` для проверки + `.Value` для доступа к
+  значению
 - `string?` — используется `string.IsNullOrWhiteSpace()`
 - Ссылочные типы (классы) — используется `!= null`
 
@@ -282,5 +290,6 @@ dotnet test
 ```
 
 Тесты включают:
+
 - **Unit-тесты генератора** — проверка генерации кода через Roslyn API
 - **Интеграционные тесты EF Core** — проверка трансляции в SQL через Testcontainers (PostgreSQL)

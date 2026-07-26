@@ -14,8 +14,8 @@ public sealed partial class FilterGenerator : IIncrementalGenerator
         var results = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 GenerateFilterAttrFqn,
-                predicate: static (node, ct) => node is ClassDeclarationSyntax,
-                transform: static (ctx, ct) => ParseFilterClass(ctx, ct))
+                static (node, ct) => node is ClassDeclarationSyntax,
+                static (ctx, ct) => ParseFilterClass(ctx, ct))
             .Where(static r => r is not null);
 
         context.RegisterSourceOutput(

@@ -11,9 +11,9 @@ public sealed partial class FilterGenerator
     // LambdaExtractor.cs (partial class FilterGenerator)
 
     /// <summary>
-    /// Извлекает путь из лямбды в Expression-поле.
-    /// o => o.Customer.Name → "Customer.Name"
-    /// o => o.History.OrderByDescending(...).First().Status → вся цепочка вызовов
+    ///     Извлекает путь из лямбды в Expression-поле.
+    ///     o => o.Customer.Name → "Customer.Name"
+    ///     o => o.History.OrderByDescending(...).First().Status → вся цепочка вызовов
     /// </summary>
     private static string? ExtractPathFromLambda(SyntaxReference syntaxRef, CancellationToken ct)
     {
@@ -26,7 +26,9 @@ public sealed partial class FilterGenerator
         LambdaExpressionSyntax? lambda = null;
 
         if (arrow?.Expression is LambdaExpressionSyntax al)
+        {
             lambda = al;
+        }
         else if (node is FieldDeclarationSyntax fieldDecl)
         {
             var variable = fieldDecl.Declaration.Variables.FirstOrDefault();
@@ -34,18 +36,16 @@ public sealed partial class FilterGenerator
         }
 
         if (lambda is null)
-        {
             // Ищем любую лямбду как fallback
             lambda = node.DescendantNodesAndSelf()
                 .OfType<LambdaExpressionSyntax>()
                 .FirstOrDefault();
-        }
 
         return lambda is not null ? WalkTopLevelLambda(lambda) : null;
     }
 
     /// <summary>
-    /// Извлекает raw expression для FullText поля
+    ///     Извлекает raw expression для FullText поля
     /// </summary>
     private static string? ExtractRawExpression(SyntaxReference syntaxRef, CancellationToken ct)
     {
@@ -65,10 +65,10 @@ public sealed partial class FilterGenerator
 
         return null;
     }
-    
+
     /// <summary>
-    /// Безопасно извлекает Expression из тела лямбды — 
-    /// работает и с expression-body, и с block-body.
+    ///     Безопасно извлекает Expression из тела лямбды —
+    ///     работает и с expression-body, и с block-body.
     /// </summary>
     private static ExpressionSyntax? GetLambdaBodyExpression(LambdaExpressionSyntax lambda)
     {
@@ -84,8 +84,8 @@ public sealed partial class FilterGenerator
     }
 
     /// <summary>
-    /// Извлекает элементы массива из Search-лямбды:
-    /// o => new[] { o.Description, o.Customer.Name } → "Description|Customer.Name"
+    ///     Извлекает элементы массива из Search-лямбды:
+    ///     o => new[] { o.Description, o.Customer.Name } → "Description|Customer.Name"
     /// </summary>
     private static string? ExtractArrayElementsFromLambda(SyntaxReference syntaxRef, CancellationToken ct)
     {
@@ -98,9 +98,13 @@ public sealed partial class FilterGenerator
         LambdaExpressionSyntax? lambda = null;
 
         if (arrow?.Expression is LambdaExpressionSyntax al)
+        {
             lambda = al;
+        }
         else if (node is PropertyDeclarationSyntax propDecl)
+        {
             lambda = propDecl.Initializer?.Value as LambdaExpressionSyntax;
+        }
         else if (node is FieldDeclarationSyntax fieldDecl)
         {
             var variable = fieldDecl.Declaration.Variables.FirstOrDefault();
@@ -146,8 +150,8 @@ public sealed partial class FilterGenerator
     }
 
     /// <summary>
-    /// Обходит верхний уровень лямбды.
-    /// o => o.Customer.Name → WalkExpression(body, "o")
+    ///     Обходит верхний уровень лямбды.
+    ///     o => o.Customer.Name → WalkExpression(body, "o")
     /// </summary>
     private static string? WalkTopLevelLambda(LambdaExpressionSyntax lambda)
     {
@@ -168,7 +172,7 @@ public sealed partial class FilterGenerator
     }
 
     /// <summary>
-    /// Рекурсивно обходит ExpressionSyntax и строит путь.
+    ///     Рекурсивно обходит ExpressionSyntax и строит путь.
     /// </summary>
     private static string WalkExpression(ExpressionSyntax expr, string paramName)
     {
@@ -191,11 +195,9 @@ public sealed partial class FilterGenerator
                 var args = string.Join(", ", inv.ArgumentList.Arguments
                     .Select(a => a.ToString()));
                 if (invoked.StartsWith("History.") || invoked.Contains("."))
-                {
                     // Цепочка: History.OrderByDescending(h => ...).Select(...)
                     // Перестраиваем: берём исходный текст
                     return ReconstructChain(expr, paramName);
-                }
 
                 return string.IsNullOrEmpty(args)
                     ? $"{invoked}()"
@@ -212,8 +214,8 @@ public sealed partial class FilterGenerator
     }
 
     /// <summary>
-    /// Для сложных цепочек вызовов (LINQ) — берём исходный текст,
-    /// заменяем параметр на "e".
+    ///     Для сложных цепочек вызовов (LINQ) — берём исходный текст,
+    ///     заменяем параметр на "e".
     /// </summary>
     private static string ReconstructChain(ExpressionSyntax expr, string paramName)
     {

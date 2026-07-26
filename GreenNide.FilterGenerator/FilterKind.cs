@@ -1,8 +1,7 @@
-namespace GreenNide.FilterGenerator
+namespace GreenNide.FilterGenerator;
+
+internal enum FilterKind
 {
-    internal enum FilterKind
-    {
-        Simple, 
-        Search,
-    }
+    Simple,
+    Search
 }

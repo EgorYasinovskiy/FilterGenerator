@@ -6,10 +6,10 @@ using Xunit;
 namespace GreenNide.ExpressionFilter.Tests.Integration;
 
 /// <summary>
-/// End-to-end тесты OrderFilterParams — проверяют полный пайплайн фильтрации
-/// через реальный PostgreSQL (Testcontainers).
-/// Тесты покрывают: простые поля, навигационные свойства, подзапросы,
-/// multi-column поиск и методы-предикаты.
+///     End-to-end тесты OrderFilterParams — проверяют полный пайплайн фильтрации
+///     через реальный PostgreSQL (Testcontainers).
+///     Тесты покрывают: простые поля, навигационные свойства, подзапросы,
+///     multi-column поиск и методы-предикаты.
 /// </summary>
 public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
 {
@@ -21,8 +21,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     private List<Order> _orders = null!;
 
     /// <summary>
-    /// Поднимает контейнер PostgreSQL, создаёт DbContext и заполняет тестовыми данными.
-    /// Вызывается один раз перед каждым тестом.
+    ///     Поднимает контейнер PostgreSQL, создаёт DbContext и заполняет тестовыми данными.
+    ///     Вызывается один раз перед каждым тестом.
     /// </summary>
     public async Task InitializeAsync()
     {
@@ -43,11 +43,11 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Создаёт 3 тестовых заказа с разными характеристиками:
-    /// - Order 1: Alice, 100$, Processing, 3 товара (Widget x3 @50), дата 2026-01-15
-    /// - Order 2: Bob, 500$, Shipped, 3 товара (Gadget + Widget), дата 2026-03-20
-    /// - Order 3: без клиента (null), 25$, Pending, 0 товаров, дата 2026-06-01
-    /// Это покрывает все граничные случаи: навигации с null, диапазоны, подзапросы.
+    ///     Создаёт 3 тестовых заказа с разными характеристиками:
+    ///     - Order 1: Alice, 100$, Processing, 3 товара (Widget x3 @50), дата 2026-01-15
+    ///     - Order 2: Bob, 500$, Shipped, 3 товара (Gadget + Widget), дата 2026-03-20
+    ///     - Order 3: без клиента (null), 25$, Pending, 0 товаров, дата 2026-06-01
+    ///     Это покрывает все граничные случаи: навигации с null, диапазоны, подзапросы.
     /// </summary>
     private async Task SeedData()
     {
@@ -75,8 +75,15 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
                 },
                 History = new List<OrderHistory>
                 {
-                    new() { Status = OrderStatus.Pending, Timestamp = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc) },
-                    new() { Status = OrderStatus.Processing, Timestamp = new DateTime(2026, 1, 16, 12, 0, 0, DateTimeKind.Utc) }
+                    new()
+                    {
+                        Status = OrderStatus.Pending, Timestamp = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
+                    },
+                    new()
+                    {
+                        Status = OrderStatus.Processing,
+                        Timestamp = new DateTime(2026, 1, 16, 12, 0, 0, DateTimeKind.Utc)
+                    }
                 }
             },
             // Order 2: Bob, 500$, Shipped, 3 items (Gadget x1 @200, Widget x2 @150)
@@ -96,8 +103,14 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
                 },
                 History = new List<OrderHistory>
                 {
-                    new() { Status = OrderStatus.Pending, Timestamp = new DateTime(2026, 3, 20, 14, 0, 0, DateTimeKind.Utc) },
-                    new() { Status = OrderStatus.Shipped, Timestamp = new DateTime(2026, 3, 22, 9, 0, 0, DateTimeKind.Utc) }
+                    new()
+                    {
+                        Status = OrderStatus.Pending, Timestamp = new DateTime(2026, 3, 20, 14, 0, 0, DateTimeKind.Utc)
+                    },
+                    new()
+                    {
+                        Status = OrderStatus.Shipped, Timestamp = new DateTime(2026, 3, 22, 9, 0, 0, DateTimeKind.Utc)
+                    }
                 }
             },
             // Order 3: No customer, 25$, Pending, 0 items
@@ -113,7 +126,10 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
                 OrderItems = new List<OrderItem>(),
                 History = new List<OrderHistory>
                 {
-                    new() { Status = OrderStatus.Pending, Timestamp = new DateTime(2026, 6, 1, 8, 0, 0, DateTimeKind.Utc) }
+                    new()
+                    {
+                        Status = OrderStatus.Pending, Timestamp = new DateTime(2026, 6, 1, 8, 0, 0, DateTimeKind.Utc)
+                    }
                 }
             }
         };
@@ -125,8 +141,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     // ─── Null filter ───────────────────────────────────────
 
     /// <summary>
-    /// Проверяет, что при передаче null-фильтра метод Apply() возвращает
-    /// все заказы без фильтрации. Метод не должен выбрасывать NullReferenceException.
+    ///     Проверяет, что при передаче null-фильтра метод Apply() возвращает
+    ///     все заказы без фильтрации. Метод не должен выбрасывать NullReferenceException.
     /// </summary>
     [Fact]
     public async Task NullFilter_ShouldReturnAllOrders()
@@ -139,9 +155,9 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     // ─── CustomerId — Equal ────────────────────────────────
 
     /// <summary>
-    /// Проверяет фильтрацию по CustomerId (Equal, Guid?).
-    /// Устанавливаем Id клиента из первого заказа — должен вернуться только Order 1.
-    /// Проверяет, что оператор Equal корректно работает с nullable Guid.
+    ///     Проверяет фильтрацию по CustomerId (Equal, Guid?).
+    ///     Устанавливаем Id клиента из первого заказа — должен вернуться только Order 1.
+    ///     Проверяет, что оператор Equal корректно работает с nullable Guid.
     /// </summary>
     [Fact]
     public async Task CustomerId_Equal_ShouldFilterCorrectly()
@@ -155,8 +171,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет, что фильтрация по несуществующему CustomerId возвращает пустой результат.
-    /// Генерирует GUID, которого нет в базе — ни один заказ не должен совпасть.
+    ///     Проверяет, что фильтрация по несуществующему CustomerId возвращает пустой результат.
+    ///     Генерирует GUID, которого нет в базе — ни один заказ не должен совпасть.
     /// </summary>
     [Fact]
     public async Task CustomerId_Equal_NoMatch_ShouldReturnEmpty()
@@ -171,9 +187,9 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     // ─── CustomerName — Contains on navigation ─────────────
 
     /// <summary>
-    /// Проверяет фильтрацию по навигационному свойству Customer.Name (Contains).
-    /// Ищем "Alice" — должен вернуться Order 1 (Customer = Alice Johnson).
-    /// Генератор должен добавить null-guard: e.Customer != null && e.Customer.Name.Contains(...).
+    ///     Проверяет фильтрацию по навигационному свойству Customer.Name (Contains).
+    ///     Ищем "Alice" — должен вернуться Order 1 (Customer = Alice Johnson).
+    ///     Генератор должен добавить null-guard: e.Customer != null && e.Customer.Name.Contains(...).
     /// </summary>
     [Fact]
     public async Task CustomerName_Contains_ShouldFilterByNavigation()
@@ -187,9 +203,9 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет, что фильтрация по Customer.Name при null-клиенте (Order 3)
-    /// не вызывает NullReferenceException. Null-guard (e.Customer != null) должен
-    /// защитить от обращения к Name у null-клиента.
+    ///     Проверяет, что фильтрация по Customer.Name при null-клиенте (Order 3)
+    ///     не вызывает NullReferenceException. Null-guard (e.Customer != null) должен
+    ///     защитить от обращения к Name у null-клиента.
     /// </summary>
     [Fact]
     public async Task CustomerName_Contains_NullCustomer_ShouldNotThrow()
@@ -205,8 +221,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     // ─── Amount range — GreaterThanOrEqual / LessThanOrEqual
 
     /// <summary>
-    /// Проверяет фильтрацию по нижней границе суммы (GreaterThanOrEqual).
-    /// MinAmount = 100: Order 1 (100$) и Order 2 (500$) проходят, Order 3 (25$) — нет.
+    ///     Проверяет фильтрацию по нижней границе суммы (GreaterThanOrEqual).
+    ///     MinAmount = 100: Order 1 (100$) и Order 2 (500$) проходят, Order 3 (25$) — нет.
     /// </summary>
     [Fact]
     public async Task MinAmount_Gte_ShouldFilterCorrectly()
@@ -220,8 +236,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет фильтрацию по верхней границе суммы (LessThanOrEqual).
-    /// MaxAmount = 100: Order 1 (100$) и Order 3 (25$) проходят, Order 2 (500$) — нет.
+    ///     Проверяет фильтрацию по верхней границе суммы (LessThanOrEqual).
+    ///     MaxAmount = 100: Order 1 (100$) и Order 3 (25$) проходят, Order 2 (500$) — нет.
     /// </summary>
     [Fact]
     public async Task MaxAmount_Lte_ShouldFilterCorrectly()
@@ -235,9 +251,9 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет комбинированную фильтрацию по диапазону суммы (Min + Max).
-    /// MinAmount = 50, MaxAmount = 200: только Order 1 (100$) попадает в диапазон.
-    /// Order 2 (500$) — больше максимума, Order 3 (25$) — меньше минимума.
+    ///     Проверяет комбинированную фильтрацию по диапазону суммы (Min + Max).
+    ///     MinAmount = 50, MaxAmount = 200: только Order 1 (100$) попадает в диапазон.
+    ///     Order 2 (500$) — больше максимума, Order 3 (25$) — меньше минимума.
     /// </summary>
     [Fact]
     public async Task AmountRange_Combined_ShouldFilterCorrectly()
@@ -254,9 +270,9 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     // ─── Date range ────────────────────────────────────────
 
     /// <summary>
-    /// Проверяет фильтрацию по нижней границе даты (GreaterThanOrEqual).
-    /// FromDate = 2026-03-01: Order 2 (2026-03-20) и Order 3 (2026-06-01) проходят.
-    /// Order 1 (2026-01-15) — раньше.
+    ///     Проверяет фильтрацию по нижней границе даты (GreaterThanOrEqual).
+    ///     FromDate = 2026-03-01: Order 2 (2026-03-20) и Order 3 (2026-06-01) проходят.
+    ///     Order 1 (2026-01-15) — раньше.
     /// </summary>
     [Fact]
     public async Task FromDate_Gte_ShouldFilterCorrectly()
@@ -270,9 +286,9 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет фильтрацию по верхней границе даты (LessThanOrEqual).
-    /// ToDate = 2026-02-01: только Order 1 (2026-01-15) попадает.
-    /// Order 2 (2026-03-20) и Order 3 (2026-06-01) — позже.
+    ///     Проверяет фильтрацию по верхней границе даты (LessThanOrEqual).
+    ///     ToDate = 2026-02-01: только Order 1 (2026-01-15) попадает.
+    ///     Order 2 (2026-03-20) и Order 3 (2026-06-01) — позже.
     /// </summary>
     [Fact]
     public async Task ToDate_Lte_ShouldFilterCorrectly()
@@ -286,9 +302,9 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет комбинированную фильтрацию по диапазону дат.
-    /// FromDate = 2026-01-01, ToDate = 2026-06-30: все 3 заказа попадают.
-    /// Это проверяет, что два Where-условия (>= и <=) корректно компонуются.
+    ///     Проверяет комбинированную фильтрацию по диапазону дат.
+    ///     FromDate = 2026-01-01, ToDate = 2026-06-30: все 3 заказа попадают.
+    ///     Это проверяет, что два Where-условия (>= и <=) корректно компонуются.
     /// </summary>
     [Fact]
     public async Task DateRange_Combined_ShouldFilterCorrectly()
@@ -307,10 +323,10 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     // ─── CurrentStatus — subquery ──────────────────────────
 
     /// <summary>
-    /// Проверяет фильтрацию по подзапросу: текущий статус заказа (последняя запись из History).
-    /// CurrentStatus = Processing: Order 1 (последняя история = Processing).
-    /// Подзапрос OrderByDescending(Timestamp).Select(Status).FirstOrDefault() должен
-    /// корректно транслироваться в SQL.
+    ///     Проверяет фильтрацию по подзапросу: текущий статус заказа (последняя запись из History).
+    ///     CurrentStatus = Processing: Order 1 (последняя история = Processing).
+    ///     Подзапрос OrderByDescending(Timestamp).Select(Status).FirstOrDefault() должен
+    ///     корректно транслироваться в SQL.
     /// </summary>
     [Fact]
     public async Task CurrentStatus_Subquery_ShouldFilterByLatestHistory()
@@ -324,8 +340,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет фильтрацию по подзапросу со статусом Shipped.
-    /// Order 2: последняя история = Shipped → должен быть найден.
+    ///     Проверяет фильтрацию по подзапросу со статусом Shipped.
+    ///     Order 2: последняя история = Shipped → должен быть найден.
     /// </summary>
     [Fact]
     public async Task CurrentStatus_Subquery_Shipped_ShouldFilterCorrectly()
@@ -339,9 +355,9 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет фильтрацию по подзапросу со статусом Pending.
-    /// Order 3: единственная история = Pending → должен быть найден.
-    /// Order 1 тоже имеет Pending в истории, но последний статус — Processing.
+    ///     Проверяет фильтрацию по подзапросу со статусом Pending.
+    ///     Order 3: единственная история = Pending → должен быть найден.
+    ///     Order 1 тоже имеет Pending в истории, но последний статус — Processing.
     /// </summary>
     [Fact]
     public async Task CurrentStatus_Subquery_Pending_ShouldReturnOrder3()
@@ -357,8 +373,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     // ─── Search — multi-column ─────────────────────────────
 
     /// <summary>
-    /// Проверяет multi-column поиск по Description.
-    /// Search = "Premium" — находится в Description второго заказа ("Premium order").
+    ///     Проверяет multi-column поиск по Description.
+    ///     Search = "Premium" — находится в Description второго заказа ("Premium order").
     /// </summary>
     [Fact]
     public async Task Search_FindsInDescription()
@@ -372,8 +388,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет multi-column поиск по Customer.Name (навигация).
-    /// Search = "Bob" — находится в имени клиента второго заказа ("Bob Smith").
+    ///     Проверяет multi-column поиск по Customer.Name (навигация).
+    ///     Search = "Bob" — находится в имени клиента второго заказа ("Bob Smith").
     /// </summary>
     [Fact]
     public async Task Search_FindsInCustomerName()
@@ -387,8 +403,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет multi-column поиск по Customer.Email (навигация).
-    /// Search = "example.com" — находится в email клиента первого заказа.
+    ///     Проверяет multi-column поиск по Customer.Email (навигация).
+    ///     Search = "example.com" — находится в email клиента первого заказа.
     /// </summary>
     [Fact]
     public async Task Search_FindsInCustomerEmail()
@@ -402,8 +418,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет, что поиск по несуществующему значению возвращает пустой результат
-    /// и не вызывает ошибок при наличии null-навигаций (Order 3 имеет null Customer).
+    ///     Проверяет, что поиск по несуществующему значению возвращает пустой результат
+    ///     и не вызывает ошибок при наличии null-навигаций (Order 3 имеет null Customer).
     /// </summary>
     [Fact]
     public async Task Search_NullCustomer_ShouldNotThrow()
@@ -418,8 +434,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     // ─── Predicate methods ─────────────────────────────────
 
     /// <summary>
-    /// Проверяет метод-предикат HasItem: фильтрация заказов, содержащих товар с определённым Id.
-    /// Передаём Id товара из первого заказа (Widget) — должен вернуться только Order 1.
+    ///     Проверяет метод-предикат HasItem: фильтрация заказов, содержащих товар с определённым Id.
+    ///     Передаём Id товара из первого заказа (Widget) — должен вернуться только Order 1.
     /// </summary>
     [Fact]
     public async Task HasItem_ShouldFilterByOrderItemId()
@@ -434,8 +450,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет, что метод HasItem при null ItemId не фильтрует — возвращаются все заказы.
-    /// Когда ItemId не задан, предикат возвращает null, и Where() не применяется.
+    ///     Проверяет, что метод HasItem при null ItemId не фильтрует — возвращаются все заказы.
+    ///     Когда ItemId не задан, предикат возвращает null, и Where() не применяется.
     /// </summary>
     [Fact]
     public async Task HasItem_Null_ShouldNotFilter()
@@ -448,8 +464,8 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет метод-предикат HasMinItemCount: фильтрация заказов с количеством товаров >= N.
-    /// MinItemCount = 2: Order 1 (1 товар ✗), Order 2 (2 товара ✓), Order 3 (0 товаров ✗).
+    ///     Проверяет метод-предикат HasMinItemCount: фильтрация заказов с количеством товаров >= N.
+    ///     MinItemCount = 2: Order 1 (1 товар ✗), Order 2 (2 товара ✓), Order 3 (0 товаров ✗).
     /// </summary>
     [Fact]
     public async Task HasMinItemCount_ShouldFilterCorrectly()
@@ -464,11 +480,13 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет метод-предикат AllItemsExpensive: все товары в заказе стоят >= N.
-    /// MinItemPrice = 100:
-    /// - Order 1: Widget @50 < 100 → исключён
-    /// - Order 2: Gadget @200, Widget @150, Widget @150 → все >= 100 ✓
-    /// - Order 3: нет товаров → All() для пустой коллекции = true ✓
+    ///     Проверяет метод-предикат AllItemsExpensive: все товары в заказе стоят >= N.
+    ///     MinItemPrice = 100:
+    ///     - Order 1: Widget @50
+    ///     < 100 → исключён
+    ///         - Order 2 : Gadget @200, Widget @150, Widget @150 → все>
+    ///         = 100 ✓
+    ///         - Order 3: нет товаров → All() для пустой коллекции = true ✓
     /// </summary>
     [Fact]
     public async Task AllItemsExpensive_ShouldFilterCorrectly()
@@ -488,10 +506,10 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     // ─── Combined filters ──────────────────────────────────
 
     /// <summary>
-    /// Проверяет комбинацию нескольких фильтров одновременно:
-    /// MinAmount=50, MaxAmount=200, FromDate=2026-01-01, ToDate=2026-06-30.
-    /// Только Order 1 (100$, 2026-01-15) удовлетворяет всем условиям.
-    /// Проверяет, что все Where-условия корректно компонуются через AND.
+    ///     Проверяет комбинацию нескольких фильтров одновременно:
+    ///     MinAmount=50, MaxAmount=200, FromDate=2026-01-01, ToDate=2026-06-30.
+    ///     Только Order 1 (100$, 2026-01-15) удовлетворяет всем условиям.
+    ///     Проверяет, что все Where-условия корректно компонуются через AND.
     /// </summary>
     [Fact]
     public async Task CombinedFilters_ShouldApplyAll()
@@ -512,9 +530,9 @@ public sealed class OrderFilterParamsEndToEndTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Проверяет, что пустой фильтр (все поля null) возвращает все заказы.
-    /// Ни одно Where-условие не должно быть добавлено — Apply() должен
-    /// вернуть исходный IQueryable без модификаций.
+    ///     Проверяет, что пустой фильтр (все поля null) возвращает все заказы.
+    ///     Ни одно Where-условие не должно быть добавлено — Apply() должен
+    ///     вернуть исходный IQueryable без модификаций.
     /// </summary>
     [Fact]
     public async Task EmptyFilter_ShouldReturnAllOrders()

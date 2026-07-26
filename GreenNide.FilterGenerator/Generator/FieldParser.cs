@@ -40,7 +40,7 @@ public sealed partial class FilterGenerator
             : InferDefaultOperator(returnType);
 
         var isNullableValueType = returnType.IsValueType
-            && returnType.NullableAnnotation == NullableAnnotation.Annotated;
+                                  && returnType.NullableAnnotation == NullableAnnotation.Annotated;
 
         return new FilterFieldDefinition
         {
@@ -56,7 +56,7 @@ public sealed partial class FilterGenerator
 
     private static FilterFieldDefinition? ParseSearchField(
         ISymbol member, string name,
-        CancellationToken ct, ImmutableArray<Microsoft.CodeAnalysis.Diagnostic>.Builder diagnostics)
+        CancellationToken ct, ImmutableArray<Diagnostic>.Builder diagnostics)
     {
         var syntaxRef = member.DeclaringSyntaxReferences.FirstOrDefault();
         if (syntaxRef is null)

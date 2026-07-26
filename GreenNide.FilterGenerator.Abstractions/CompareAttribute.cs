@@ -2,10 +2,13 @@ using System;
 
 namespace GreenNide.ExpressionFilter;
 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class CompareAttribute : Attribute
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public class CompareAttribute : Attribute
+{
+    public CompareAttribute(CompareOperator op)
     {
-        public CompareOperator Operator { get; }
-        public CompareAttribute(CompareOperator op) => Operator = op;
+        Operator = op;
     }
-    
+
+    public CompareOperator Operator { get; }
+}
