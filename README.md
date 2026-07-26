@@ -1,4 +1,4 @@
-# GreenNide.ExpressionFilter
+# GreenNide.FilterGenerator
 
 [![NuGet Version](https://img.shields.io/nuget/v/GreenNide.FilterGenerator?label=nuget&color=blue)](https://www.nuget.org/packages/GreenNide.FilterGenerator/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/GreenNide.FilterGenerator?color=green)](https://www.nuget.org/packages/GreenNide.FilterGenerator/)
