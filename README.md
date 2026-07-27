@@ -163,6 +163,25 @@ var filter = new ProductFilterParams
 var results = _db.Products.Apply(filter).ToList();
 ```
 
+## Custom Class Name
+
+By default the generated class is named `{EntityName}FilterParams`. Override it with `ClassName`:
+
+```csharp
+[GenerateFilter(typeof(Category), ClassName = "CategorySearchParams")]
+public partial class CategoryFilterDefinition
+{
+    public static Expression<Func<Category, string>>? Name { get; } = o => o.Name;
+
+    public static Expression<Func<Category, string[]>>? Search { get; } =
+        o => new[] { o.Name };
+}
+
+// Generated class: CategorySearchParams (not CategoryFilterParams)
+var filter = new CategorySearchParams { Name = "Electronics" };
+var results = _db.Categories.Apply(filter).ToList();
+```
+
 ## Tests
 
 ```bash
