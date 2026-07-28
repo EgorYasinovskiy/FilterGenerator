@@ -8,7 +8,7 @@
         <IsRoslynComponent>true</IsRoslynComponent>
 
         <PackageId>GreenNide.FilterGenerator</PackageId>
-        <Version>0.0.1-alpha.7</Version>
+        <Version>0.0.1-alpha.8</Version>
         <Authors>GreenNide</Authors>
         <Copyright>Copyright (c) GreenNide 2026</Copyright>
         <Description>Source generator for filtering and querying collections using expression trees. Generates POCO filter classes with Apply() extension method for IQueryable.</Description>
