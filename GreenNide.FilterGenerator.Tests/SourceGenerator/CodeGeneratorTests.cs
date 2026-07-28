@@ -99,9 +99,183 @@ public class CodeGeneratorTests
     }
 
     /// <summary>
-    ///     Проверяет, что для простого пути "o.Customer.Name" AST-замена корректно
-    ///     заменяет только корневой идентификатор "o" на "e".
+    ///     Проверяет, что при одинаковом имени параметра во внешней и вложенной лямбдах
+    ///     заменяется только внешний параметр, а внутренний остаётся нетронутым.
+    ///     t => t.History.FirstOrDefault(t => t.StatusId == 1)
+    ///     → e.History.FirstOrDefault(t => t.StatusId == 1)
+    ///     (внутренний t — это параметр вложенной лямбды, а не внешний)
     /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_ShouldNotReplaceInnerLambdaParamWithSameName()
+    {
+        var body = SyntaxFactory.ParseExpression(
+            "t.History.FirstOrDefault(t => t.StatusId == 1)");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        Assert.Equal("e.History.FirstOrDefault(t => t.StatusId == 1)", result);
+    }
+
+    /// <summary>
+    ///     Проверяет, что при вложенной лямбе с другим именем параметра,
+    ///     ссылки на внешний параметр внутри тела вложенной лямбы
+    ///     всё равно корректно заменяются на "e".
+    ///     t => t.History.FirstOrDefault(h => h.StatusId == t.Value)
+    ///     → e.History.FirstOrDefault(h => h.StatusId == e.Value)
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_ShouldReplaceOuterParamInsideInnerLambda()
+    {
+        var body = SyntaxFactory.ParseExpression(
+            "t.History.FirstOrDefault(h => h.StatusId == t.Value)");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        Assert.Equal("e.History.FirstOrDefault(h => h.StatusId == e.Value)", result);
+    }
+
+    /// <summary>
+    ///     Where + обращение к внешнему параметру из внутренней лямбы.
+    ///     t.History.Where(x => x.StatusId == t.Status.Id)
+    ///     → e.History.Where(x => x.StatusId == e.Status.Id)
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_WhereWithOuterParamRef_ShouldReplace()
+    {
+        var body = SyntaxFactory.ParseExpression(
+            "t.History.Where(x => x.StatusId == t.Status.Id)");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        Assert.Equal("e.History.Where(x => x.StatusId == e.Status.Id)", result);
+    }
+
+    /// <summary>
+    ///     Select + обращение к внешнему параметру из внутренней лямбы.
+    ///     t.History.Select(x => new { x.Id, t.Name })
+    ///     → e.History.Select(x => new { x.Id, e.Name })
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_SelectWithOuterParamRef_ShouldReplace()
+    {
+        var body = SyntaxFactory.ParseExpression(
+            "t.History.Select(x => new { x.Id, t.Name })");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        Assert.Equal("e.History.Select(x => new { x.Id, e.Name })", result);
+    }
+
+    /// <summary>
+    ///     GroupBy + обращение к внешнему параметру.
+    ///     t.Items.GroupBy(x => x.Category, x => x.Price, (k, g) => new { k, Sum = g.Sum(s => s) + t.Bonus })
+    ///     → e.Items.GroupBy(x => x.Category, x => x.Price, (k, g) => new { k, Sum = g.Sum(s => s) + e.Bonus })
+    ///     Внутренняя лямба g.Sum(s => s) не должна быть затронута.
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_GroupByWithNestedLambdaAndOuterRef_ShouldReplace()
+    {
+        var body = SyntaxFactory.ParseExpression(
+            "t.Items.GroupBy(x => x.Category, x => x.Price, (k, g) => new { k, Sum = g.Sum(s => s) + t.Bonus })");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        Assert.Equal(
+            "e.Items.GroupBy(x => x.Category, x => x.Price, (k, g) => new { k, Sum = g.Sum(s => s) + e.Bonus })",
+            result);
+    }
+
+    /// <summary>
+    ///     Any с тремя уровнями вложенности и обращением к внешнему параметру.
+    ///     t.History.Any(x => x.Children.Any(y => y.Active && y.Id == t.PrimaryId))
+    ///     → e.History.Any(x => x.Children.Any(y => y.Active && y.Id == e.PrimaryId))
+    ///     Внутренние параметры x и y не должны заменяться.
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_DeepNestedLambdaWithOuterRef_ShouldReplace()
+    {
+        var body = SyntaxFactory.ParseExpression(
+            "t.History.Any(x => x.Children.Any(y => y.Active && y.Id == t.PrimaryId))");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        Assert.Equal(
+            "e.History.Any(x => x.Children.Any(y => y.Active && y.Id == e.PrimaryId))",
+            result);
+    }
+
+    /// <summary>
+    ///     SelectMany + тернарник + обращение к внешнему параметру.
+    ///     t.History.SelectMany(x => x.Tags, (x, tag) => x.IsActive ? t.DefaultTag : tag.Name)
+    ///     → e.History.SelectMany(x => x.Tags, (x, tag) => x.IsActive ? e.DefaultTag : tag.Name)
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_SelectManyWithTernaryAndOuterRef_ShouldReplace()
+    {
+        var body = SyntaxFactory.ParseExpression(
+            "t.History.SelectMany(x => x.Tags, (x, tag) => x.IsActive ? t.DefaultTag : tag.Name)");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        Assert.Equal(
+            "e.History.SelectMany(x => x.Tags, (x, tag) => x.IsActive ? e.DefaultTag : tag.Name)",
+            result);
+    }
+
+    /// <summary>
+    ///     Две вложенные лямбы с одинаковым именем (обе теневят параметр).
+    ///     t.History.Where(t => t.StatusId == 1).Any(t => t.Id == t.History.Count)
+    ///     → e.History.Where(t => t.StatusId == 1).Any(t => t.Id == t.History.Count)
+    ///     Все теневящие лямбы защищены — ничего кроме внешних t не заменяется.
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_MultipleShadowedLambdas_ShouldNotReplace()
+    {
+        var body = SyntaxFactory.ParseExpression(
+            "t.History.Where(t => t.StatusId == 1).Any(t => t.Id == t.History.Count)");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        Assert.Equal(
+            "e.History.Where(t => t.StatusId == 1).Any(t => t.Id == t.History.Count)",
+            result);
+    }
+
+    /// <summary>
+    ///     Тернарник + вложенные лямбы: внешний параметр в условии и в ветках.
+    ///     t.History.Any() ? t.History.Where(x => x.Status == t.CurrentStatus).FirstOrDefault() : t.DefaultStatus
+    ///     → e.History.Any() ? e.History.Where(x => x.Status == e.CurrentStatus).FirstOrDefault() : e.DefaultStatus
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_TernaryWithNestedLambdasAndOuterRef_ShouldReplace()
+    {
+        var body = SyntaxFactory.ParseExpression(
+            "t.History.Any() ? t.History.Where(x => x.Status == t.CurrentStatus).FirstOrDefault() : t.DefaultStatus");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        Assert.Equal(
+            "e.History.Any() ? e.History.Where(x => x.Status == e.CurrentStatus).FirstOrDefault() : e.DefaultStatus",
+            result);
+    }
     [Fact]
     public void ReplaceParamWithEntity_SimpleMemberAccess_ShouldWork()
     {

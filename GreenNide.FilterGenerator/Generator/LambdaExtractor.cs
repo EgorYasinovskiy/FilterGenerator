@@ -228,14 +228,40 @@ public sealed partial class FilterGenerator
     ///     AST-based замена идентификатора параметра лямбды на "e".
     ///     В отличие от string.Replace, работает с именами узлов,
     ///     а не с подстроками — не ломает идентификаторы вроде Project, Status и т.д.
+    ///     Также корректно обрабатывает вложенные лямбы с таким же именем параметра:
+    ///     t => t.History.FirstOrDefault(t => t.StatusId) → e.History.FirstOrDefault(t => t.StatusId)
+    ///     Внутренний t НЕ заменяется на e, так как это параметр внутренней лямбды.
     /// </summary>
     private static string ReplaceParamWithEntity(ExpressionSyntax expr, string paramName)
     {
-        var rewritten = expr.ReplaceNodes(
-            expr.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>(),
-            (original, _) => original.Identifier.Text == paramName
-                ? SyntaxFactory.IdentifierName("e")
-                : original);
+        var targets = FindNonShadowedParamReferences(expr, paramName).ToList();
+        if (targets.Count == 0) return expr.ToString();
+
+        var rewritten = expr.ReplaceNodes(targets, (original, _) =>
+            SyntaxFactory.IdentifierName("e"));
         return rewritten.ToString();
+    }
+
+    /// <summary>
+    ///     Находит все IdentifierNameSyntax, ссылающиеся на параметр paramName,
+    ///     но только те, что НЕ находятся внутри вложенной лямбы с тем же именем параметра.
+    ///     Использует DescendantNodes с предикатом, который блокирует спуск
+    ///     в тело лямбы, если она теневит наш параметр.
+    /// </summary>
+    private static IEnumerable<IdentifierNameSyntax> FindNonShadowedParamReferences(
+        SyntaxNode root, string paramName)
+    {
+        return root.DescendantNodes(node =>
+            {
+                if (node is SimpleLambdaExpressionSyntax simple &&
+                    simple.Parameter.Identifier.Text == paramName)
+                    return false;
+                if (node is ParenthesizedLambdaExpressionSyntax paren &&
+                    paren.ParameterList.Parameters.Any(p => p.Identifier.Text == paramName))
+                    return false;
+                return true;
+            })
+            .OfType<IdentifierNameSyntax>()
+            .Where(id => id.Identifier.Text == paramName);
     }
 }
