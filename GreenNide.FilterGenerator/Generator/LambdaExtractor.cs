@@ -194,7 +194,7 @@ public sealed partial class FilterGenerator
                 var invoked = WalkExpression(inv.Expression, paramName);
                 var args = string.Join(", ", inv.ArgumentList.Arguments
                     .Select(a => a.ToString()));
-                if (invoked.StartsWith("History.") || invoked.Contains("."))
+                if (invoked.Contains("."))
                     // Цепочка: History.OrderByDescending(h => ...).Select(...)
                     // Перестраиваем: берём исходный текст
                     return ReconstructChain(expr, paramName);
