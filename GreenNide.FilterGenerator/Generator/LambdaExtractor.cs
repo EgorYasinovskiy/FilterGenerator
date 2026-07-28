@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace GreenNide.FilterGenerator.Generator;
@@ -60,7 +61,7 @@ public sealed partial class FilterGenerator
             var body = GetLambdaBodyExpression(lambda);
             if (body is null) return null;
             var paramName = GetParamName(lambda);
-            return body.ToString().Replace($"{paramName}.", "e.");
+            return body is null ? null : ReplaceParamWithEntity(body, paramName);
         }
 
         return null;
@@ -209,16 +210,32 @@ public sealed partial class FilterGenerator
 
             // object Initializer или MemberInit
             default:
-                return expr.ToString().Replace($"{paramName}.", "");
+                return ReplaceParamWithEntity(expr, paramName);
         }
     }
 
     /// <summary>
-    ///     Для сложных цепочек вызовов (LINQ) — берём исходный текст,
-    ///     заменяем параметр на "e".
+    ///     Для сложных цепочек вызовов (LINQ) — обходим AST и заменяем
+    ///     ссылки на параметр лямбды (o) на "e". Поддерживает тернарные
+    ///     выражения, вложенные коллбэки и любые узлы дерева.
     /// </summary>
     private static string ReconstructChain(ExpressionSyntax expr, string paramName)
     {
-        return expr.ToString().Replace($"{paramName}.", "");
+        return ReplaceParamWithEntity(expr, paramName);
+    }
+
+    /// <summary>
+    ///     AST-based замена идентификатора параметра лямбды на "e".
+    ///     В отличие от string.Replace, работает с именами узлов,
+    ///     а не с подстроками — не ломает идентификаторы вроде Project, Status и т.д.
+    /// </summary>
+    private static string ReplaceParamWithEntity(ExpressionSyntax expr, string paramName)
+    {
+        var rewritten = expr.ReplaceNodes(
+            expr.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>(),
+            (original, _) => original.Identifier.Text == paramName
+                ? SyntaxFactory.IdentifierName("e")
+                : original);
+        return rewritten.ToString();
     }
 }

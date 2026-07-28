@@ -108,7 +108,7 @@ public sealed partial class FilterGenerator
         var nullCheck = BuildNullCheck(field);
         sb.AppendLine($"        if ({nullCheck})");
 
-        var left = $"e.{field.EntityPath}";
+        var left = field.EntityPath.StartsWith("e.") ? field.EntityPath : $"e.{field.EntityPath}";
         var right = $"filter.{field.PropertyName}" +
                     (field.IsNullableValueType ? ".Value" : "");
 

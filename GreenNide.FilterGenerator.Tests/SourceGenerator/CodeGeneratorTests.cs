@@ -1,5 +1,6 @@
 using System.Reflection;
 using GreenNide.FilterGenerator;
+using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
 namespace GreenNide.ExpressionFilter.Tests.SourceGenerator;
@@ -42,6 +43,195 @@ public class CodeGeneratorTests
     }
 
     // ─── Null-guard для многоуровневых навигаций ──────────
+
+    // ─── AST-based замена параметра: без ложных срабатываний ──────────
+
+    /// <summary>
+    ///     Проверяет, что AST-based замена параметра не ломает
+    ///     идентификаторы, заканчивающиеся на букву параметра перед точкой.
+    ///     При параметре "t" и пути "t.Project.Statuses" — метод string.Replace
+    ///     найдёт "t." внутри "Project." и сломает результат в "e.Project.e.Statuses".
+    ///     AST-подход заменяет ТОЛЬКО узлы IdentifierNameSyntax, совпадающие с именем параметра.
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_ShouldNotBreakIdentifiersEndingWithParamChar()
+    {
+        // Arrange: выражение t.Project.Statuses, где параметр — "t".
+        // Проблема: строка "t.Project.Statuses" содержит подстроку "t." в двух местах:
+        // 1. "t." в начале (референс параметра)
+        // 2. "t." внутри "Project.Statuses" (конец "Project" + точка)
+        var body = SyntaxFactory.ParseExpression("t.Project.Statuses.FirstOrDefault()");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        // Act: заменяем параметр "t" на "e" AST-обходом.
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        // Assert: результат должен быть "e.Project.Statuses.FirstOrDefault()".
+        // НЕ должно быть "e.Projece.Statuses" (как дал бы string.Replace).
+        Assert.Equal("e.Project.Statuses.FirstOrDefault()", result);
+    }
+
+    /// <summary>
+    ///     Проверяет, что для тернарного выражения с параметром "t" и идентификатором
+    ///     "Project" (заканчивающимся на 't') все ветки корректно используют "e."
+    ///     и не получают двойную замену внутри "Project.Statuses".
+    /// </summary>
+    [Fact]
+    public void TernaryExpression_WithT_ParamAndProject_Termination_ShouldBeCorrect()
+    {
+        // Arrange: тернарное выражение, где параметр назван "t",
+        // и есть обращение t.Project.Statuses (Project заканчивается на 't').
+        // До фикса string.Replace давал "e.Projece.Statuses" — сломанный результат.
+        var body = SyntaxFactory.ParseExpression(
+            "t.History.Any() ? t.History.FirstOrDefault() : t.Project.Statuses.FirstOrDefault()");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        // Act
+        var result = (string)method.Invoke(null, [body, "t"])!;
+
+        // Assert: все три ветки должны иметь "e." и не иметь двойной замены.
+        Assert.Equal(
+            "e.History.Any() ? e.History.FirstOrDefault() : e.Project.Statuses.FirstOrDefault()",
+            result);
+        Assert.DoesNotContain("e.Projece.Statuses", result);
+    }
+
+    /// <summary>
+    ///     Проверяет, что для простого пути "o.Customer.Name" AST-замена корректно
+    ///     заменяет только корневой идентификатор "o" на "e".
+    /// </summary>
+    [Fact]
+    public void ReplaceParamWithEntity_SimpleMemberAccess_ShouldWork()
+    {
+        var body = SyntaxFactory.ParseExpression("o.Customer.Name");
+        var method = GeneratorType.GetMethod("ReplaceParamWithEntity",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var result = (string)method.Invoke(null, [body, "o"])!;
+
+        Assert.Equal("e.Customer.Name", result);
+    }
+
+    // ─── Null-guard с префиксом "e." ──────────
+
+    /// <summary>
+    ///     Проверяет, что BuildNullGuard корректно обрабатывает путь,
+    ///     который начинается с "e." (как возвращает ReplaceParamWithEntity).
+    ///     Должен вернуть "e.History != null" для пути
+    ///     "e.History.OrderByDescending(...).Any() ? ... : ..."
+    /// </summary>
+    [Fact]
+    public void BuildNullGuard_WithEPrefix_ShouldStripPrefixAndBuildGuard()
+    {
+        var guard = BuildNullGuardViaReflection(
+            "e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).Any() ? e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).FirstOrDefault() : e.Project.Statuses.OrderBy(x=>x.Order).Select(x=>x.Id).FirstOrDefault()");
+
+        Assert.NotNull(guard);
+        Assert.Contains("e.History != null", guard);
+        // Не должно быть "ee." или "e.e.History" (двойной префикс).
+        Assert.DoesNotContain("ee.", guard!);
+        Assert.DoesNotContain("e.e.", guard!);
+    }
+
+    /// <summary>
+    ///     Проверяет, что BuildNullGuard для простого пути без "e."
+    ///     по-прежнему работает (обратная совместимость).
+    /// </summary>
+    [Fact]
+    public void BuildNullGuard_WithoutEPrefix_ShouldWorkAsBefore()
+    {
+        var guard = BuildNullGuardViaReflection("Customer.Name");
+
+        Assert.NotNull(guard);
+        Assert.Equal("e.Customer != null", guard);
+    }
+
+    // ─── Генерация кода с e.-префиксом в EntityPath ──────────
+
+    /// <summary>
+    ///     Проверяет, что при EntityPath, начинающемся с "e.",
+    ///     код генератора НЕ добавляет повторный "e." (без "ee.").
+    ///     Воспроизводит сценарий: сложный LINQ-выражение (ReconstructChain)
+    ///     вернул путь с "e." префиксом, и CodeGenerator корректно его использует.
+    /// </summary>
+    [Fact]
+    public void GenerateCode_WithEPrefixedEntityPath_ShouldNotDoublePrefix()
+    {
+        var def = new FilterClassDefinition
+        {
+            Namespace = "Test",
+            ClassName = "OrderFilterDefinition",
+            EntityName = "Order",
+            EntityFullName = "Test.Order",
+            Fields =
+            [
+                new FilterFieldDefinition
+                {
+                    PropertyName = "CurrentStatus",
+                    PropertyTypeCs = "OrderStatus?",
+                    EntityPath = "e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).Any() ? e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).FirstOrDefault() : e.Project.Statuses.OrderBy(x=>x.Order).Select(x=>x.Id).FirstOrDefault()",
+                    Operator = CompareOperator.Equal,
+                    Kind = FilterKind.Simple,
+                    NavigationNullGuard = BuildNullGuardViaReflection(
+                        "e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).Any() ? e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).FirstOrDefault() : e.Project.Statuses.OrderBy(x=>x.Order).Select(x=>x.Id).FirstOrDefault()"),
+                    IsNullableValueType = true
+                }
+            ]
+        };
+
+        var code = GenerateCode(def);
+
+        // Все ветки должны иметь "e." и не иметь "ee.".
+        Assert.Contains("e.History.OrderByDescending", code);
+        Assert.Contains("e.Project.Statuses.OrderBy", code);
+        Assert.DoesNotContain("ee.", code);
+        // Проверяем, что в коде нет сломанных веток без префикса.
+        Assert.DoesNotContain("? History.OrderByDescending", code);
+        Assert.DoesNotContain(": Project.Statuses.OrderBy", code);
+    }
+
+    /// <summary>
+    ///     Проверяет, что в сгенерированном коде для тернарного выражения
+    ///     с несколькими ссылками на сущность (o.History и o.Project.X)
+    ///     все ветки корректно получают префикс "e." — без дублирования и без пропусков.
+    ///     Тест воспроизводит баг, когда ReconstructChain заменял все "t." на пустую строку,
+    ///     в результате чего ветки тернарника после "?" и ":" теряли префикс "e.".
+    /// </summary>
+    [Fact]
+    public void TernaryExpression_ShouldHaveEntityPrefixInAllBranches()
+    {
+        // Arrange: поле с тернарным выражением, ссылающимся на сущность в нескольких ветках.
+        var def = new FilterClassDefinition
+        {
+            Namespace = "Test",
+            ClassName = "OrderFilterDefinition",
+            EntityName = "Order",
+            EntityFullName = "Test.Order",
+            Fields =
+            [
+                new FilterFieldDefinition
+                {
+                    PropertyName = "CurrentStatus",
+                    PropertyTypeCs = "int?",
+                    EntityPath = "e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).Any() ? e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).FirstOrDefault() : e.Project.TaskStatuses.OrderBy(x=>x.Order).Select(x=>x.Id).FirstOrDefault()",
+                    Operator = CompareOperator.Equal,
+                    Kind = FilterKind.Simple,
+                    NavigationNullGuard = BuildNullGuardViaReflection("e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).Any() ? e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).FirstOrDefault() : e.Project.TaskStatuses.OrderBy(x=>x.Order).Select(x=>x.Id).FirstOrDefault()"),
+                    IsNullableValueType = true
+                }
+            ]
+        };
+
+        // Act: генерируем код.
+        var code = GenerateCode(def);
+
+        // Assert: все ветки тернарника должны иметь префикс "e." — без дублирования ("ee.") и без пропусков.
+        Assert.Contains("e.History.OrderByDescending", code);
+        Assert.Contains("e.Project.TaskStatuses.OrderBy", code);
+        Assert.DoesNotContain("ee.", code);
+    }
 
     /// <summary>
     ///     Проверяет генерацию null-guard для 4-уровневой навигации: Order.Customer.Address.City.

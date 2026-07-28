@@ -113,6 +113,9 @@ public sealed partial class FilterGenerator
         //   "e.Order != null && e.Order.Customer != null && e.Order.Customer.Address != null"
         // Сложные LINQ: "History.OrderByDescending(...).Select(...).FirstOrDefault()" →
         //   только первый сегмент: "e.History != null"
+        // Пути, полученные через ReconstructChain, могут начинаться с "e." — убираем этот префикс перед разбором.
+        if (path.StartsWith("e."))
+            path = path.Substring(2);
 
         var openParen = path.IndexOf('(');
         var navPath = openParen >= 0 ? path.Substring(0, openParen) : path;
