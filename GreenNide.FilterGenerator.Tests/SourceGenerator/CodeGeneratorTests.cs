@@ -367,6 +367,50 @@ public class CodeGeneratorTests
     }
 
     /// <summary>
+    ///     Проверяет, что тернарное выражение в EntityPath оборачивается в скобки,
+    ///     чтобы оператор сравнения (==, != и т.д.) не попал внутрь ветки "?:".
+    ///     Без скобок: condition ? value1 : value2 == filter.X
+    ///     С скобками: (condition ? value1 : value2) == filter.X
+    ///     Без скобок первый тест падает из-за приоритета операторов.
+    /// </summary>
+    [Fact]
+    public void TernaryExpression_ShouldBeWrappedInParentheses()
+    {
+        var def = new FilterClassDefinition
+        {
+            Namespace = "Test",
+            ClassName = "SimpleTaskFilterDefinition",
+            EntityName = "SimpleTask",
+            EntityFullName = "Test.SimpleTask",
+            Fields =
+            [
+                new FilterFieldDefinition
+                {
+                    PropertyName = "Status",
+                    PropertyTypeCs = "long?",
+                    EntityPath = "e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).Any() ? e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).FirstOrDefault() : e.Project.TaskStatuses.OrderBy(x=>x.Order).Select(x=>x.Id).FirstOrDefault()",
+                    Operator = CompareOperator.Equal,
+                    Kind = FilterKind.Simple,
+                    NavigationNullGuard = BuildNullGuardViaReflection(
+                        "e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).Any() ? e.History.OrderByDescending(h => h.CreatedAt).Select(x => (long?)x.StatusId).FirstOrDefault() : e.Project.TaskStatuses.OrderBy(x=>x.Order).Select(x=>x.Id).FirstOrDefault()"),
+                    IsNullableValueType = true
+                }
+            ]
+        };
+
+        var code = GenerateCode(def);
+
+        // Тернарник должен быть обёрнут в скобки: "(ternary) == filter.Status.Value"
+        // Проверяем структуру: Where(e => (...ternary...) == filter.Status.Value)
+        Assert.Contains("query.Where(e => (", code);
+        Assert.Contains(") == filter.Status.Value)", code);
+
+        // НЕ должно быть: ternary == filter.Status.Value без скобок вокруг ternary
+        // Т.е. ": e.Project.TaskStatuses" должно идти до "==", а не после ")"
+        Assert.DoesNotContain(").Select(x=>x.Id)\n                .FirstOrDefault() == filter.Status.Value));", code);
+    }
+
+    /// <summary>
     ///     Проверяет, что в сгенерированном коде для тернарного выражения
     ///     с несколькими ссылками на сущность (o.History и o.Project.X)
     ///     все ветки корректно получают префикс "e." — без дублирования и без пропусков.

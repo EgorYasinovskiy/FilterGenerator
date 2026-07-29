@@ -112,6 +112,10 @@ public sealed partial class FilterGenerator
         var right = $"filter.{field.PropertyName}" +
                     (field.IsNullableValueType ? ".Value" : "");
 
+        // Всегда оборачиваем в скобки, чтобы тернарные выражения и цепочки вызовов
+        // корректно работали с операторами сравнения (==, != и т.д.)
+        left = $"({left})";
+
         var op = field.Operator switch
         {
             CompareOperator.Equal => "==",
